@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 import { withAuthenticator, AmplifySignOut } from '@aws-amplify/ui-react';
 import { css } from '@emotion/css';
-import { API, Storage } from 'aws-amplify';
+import { API, Storage, Auth } from 'aws-amplify';
 import { listPosts } from './graphql/queries';
 
 import Posts from './Posts';
@@ -19,11 +19,20 @@ function Router() {
   /* create a couple of pieces of initial state */
   const [showOverlay, updateOverlayVisibility] = useState(false);
   const [posts, updatePosts] = useState([]);
+  const [myPosts, updateMyPosts] = useState([]);
 
 
   useEffect(() => {
       fetchPosts();
   }, []);
+
+  async function setPostState(postsArray) {
+    const user = await Auth.currentAuthenticatedUser();
+    const myPostData = postsArray.filter(p => p.owner === user.username);
+    updateMyPosts(myPostData);
+    updatePosts(postsArray);
+  }
+  
 
   async function fetchPosts() {
     /* query the API, ask for 100 items */
@@ -57,6 +66,10 @@ function Router() {
               <Route path="/post/:id" >
                 <Post />
               </Route>
+              <Route exact path="/myposts" >
+                <Posts posts={myPosts} />
+              </Route>
+
             </Switch>
           </div>
           <AmplifySignOut />
